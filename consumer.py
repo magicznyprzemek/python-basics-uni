@@ -1,66 +1,43 @@
-import csv
+import sqlite3
 import time
 
-FILE_NAME = 'tasks.csv'
+DB_NAME = 'tasks.db'
 
 def consume_task():
     while True:
-        tasks = []
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
 
-        # Wczytanie zadań z pliku
-        try:
-            with open(FILE_NAME, 'r') as f:
-                reader = csv.reader(f)
-                tasks = list(reader)
-        except FileNotFoundError:
-            print("No tasks found. Waiting...")
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            id TEXT PRIMARY KEY,
+            status TEXT NOT NULL
+        )
+        """)
+
+        cursor.execute("SELECT id FROM tasks WHERE status = 'pending' LIMIT 1")
+        task = cursor.fetchone()
+
+        if not task:
+            print("brak tasków")
+            conn.close()
             time.sleep(5)
             continue
 
-        if len(tasks) <= 1:
-            print("No pending tasks. Waiting...")
-            time.sleep(5)
-            continue
+        task_id = task[0]
+        print(f"przetwarzanie id: {task_id}")
 
-        # Przetwarzanie pierwszego zadania o statusie "pending"
-        for i, task in enumerate(tasks[1:], start=1):
-            if task[1] == 'pending':
-                print(f"Processing task ID: {task[0]}")
-                tasks[i][1] = 'in_progress'
+        cursor.execute("UPDATE tasks SET status = 'in_progress' WHERE id = ?", (task_id,))
+        conn.commit()
 
-                # Aktualizacja statusu na in_progress
-                with open(FILE_NAME, 'w', newline='') as f:
-                    writer = csv.writer(f)
-                    writer.writerows(tasks)
+        time.sleep(30)
 
-                # Wykonanie zadania (symulacja)
-                time.sleep(30)
-                print(f"Task ID: {task[0]} completed.")
-                tasks[i][1] = 'done'
+        print(f"ukończono id: {task_id}.")
 
-                # Aktualizacja statusu na done
-                with open(FILE_NAME, 'w', newline='') as f:
-                    writer = csv.writer(f)
-                    writer.writerows(tasks)
+        cursor.execute("UPDATE tasks SET status = 'done' WHERE id = ?", (task_id,))
+        conn.commit()
 
-                break
-        else:
-            print("No pending tasks. Waiting...")
-            time.sleep(5)
+        conn.close()
 
 if __name__ == "__main__":
     consume_task()
-class Student:
-    def __init__(self, name, marks):
-        self.name = name
-        self.marks = marks
-
-    def is_passed(self):
-        average_mark = sum(self.marks) / len(self.marks)
-        return average_mark > 50
-
-student1 = Student("A", [70, 65, 80])
-student2 = Student("B", [40, 45, 35])
-
-print(student1.is_passed())
-print(student2.is_passed())
