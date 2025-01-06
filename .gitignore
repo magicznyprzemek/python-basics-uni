@@ -1,7 +1,11 @@
 .idea
 
-# pliki modelu
+
+*.pb
+*.ckpt
+
 models/frozen_inference_graph.pb
 models/saved_model/saved_model.pb
 models/model.ckpt.data-00000-of-00001
+models.zip
 
