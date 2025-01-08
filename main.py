@@ -6,7 +6,6 @@ import shutil
 app = FastAPI()
 
 
-
 @app.post("/detect/url")
 async def detect_from_url(url: str = Form(...)):
     task = detect_people_from_url.delay(url)
