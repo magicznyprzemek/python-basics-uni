@@ -14,7 +14,7 @@ async def detect_from_file(file: UploadFile = File(...)):
 
     with open(image_path, 'wb+') as f:
         f.write(file.file.read())
-    print(f"File successfully saved at {image_path}")
+    print(f"!!!!!!!!!!File successfully saved at {image_path}")
 
     task = detect_people_from_file.delay(image_path)
     return {"task_id": task.id}

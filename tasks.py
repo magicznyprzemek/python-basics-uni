@@ -11,6 +11,12 @@ celery = Celery(
     backend="redis://localhost:6379/0",
 )
 
+celery.conf.task_routes = {
+    "tasks.detect_people_from_file": {"queue": "image_queue"},
+    "tasks.detect_people_from_url": {"queue": "image_queue"}
+}
+
+
 celery.conf.update(
     task_serializer="json",
     accept_content=["json"],
