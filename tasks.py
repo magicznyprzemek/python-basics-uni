@@ -1,9 +1,7 @@
 from celery import Celery
-import cv2
 import os
-import numpy as np
 import requests
-from io import BytesIO
+import cv2
 
 celery = Celery(
     "tasks",
@@ -16,18 +14,18 @@ celery.conf.task_routes = {
     "tasks.detect_people_from_url": {"queue": "image_queue"}
 }
 
-
 celery.conf.update(
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
 )
 
-def detect_people(image_path): ##
+def detect_people(image_path):
     net = cv2.dnn.readNetFromTensorflow(
         "models/frozen_inference_graph.pb",
         "models/faster_rcnn_resnet50_coco_2018_01_28.pbtxt"
     )
+
     image = cv2.imread(image_path)
     height, width, _ = image.shape
 
@@ -38,7 +36,9 @@ def detect_people(image_path): ##
     count = 0
     for i in range(detections.shape[2]):
         confidence = detections[0, 0, i, 2]
-        if confidence > 0.5:
+        class_id = int(detections[0, 0, i, 1])
+
+        if confidence > 0.5 and class_id == 0:
             count += 1
             x1 = int(detections[0, 0, i, 3] * width)
             y1 = int(detections[0, 0, i, 4] * height)
@@ -50,17 +50,18 @@ def detect_people(image_path): ##
     cv2.imwrite(output_path, image)
     return count, output_path
 
+
 @celery.task
 def detect_people_from_file(file_path):
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise FileNotFoundError(f"brak pliku {file_path}")
 
     image = cv2.imread(file_path)
     if image is None:
-        raise ValueError(f"Cannot load image from file: {file_path}")
+        raise ValueError(f"brak pliku {file_path}")
 
     count, output = detect_people(file_path)
-    return {"count": count, "output_path": output}
+    return {"ludzi": count, "lokalizacja": output}
 
 @celery.task
 def detect_people_from_url(url):
@@ -69,4 +70,4 @@ def detect_people_from_url(url):
     with open(image_path, 'wb') as f:
         f.write(response.content)
     count, output = detect_people(image_path)
-    return {"count": count, "output_path": output}
+    return {"ludzi": count, "lokalizacja": output}
